@@ -1,6 +1,8 @@
 
 --Base64 encoding and decoding in Lua
+--Written by Cosmin Apreutesei. Public Domain.
 
+--Original code from:
 --https://github.com/kengonakajima/luvit-base64/issues/1
 --http://lua-users.org/wiki/BaseSixtyFour
 
