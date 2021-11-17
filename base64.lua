@@ -1,5 +1,6 @@
 
 --https://github.com/kengonakajima/luvit-base64/issues/1
+--http://lua-users.org/wiki/BaseSixtyFour
 
 local base64 = {}
 
@@ -89,6 +90,41 @@ function base64.encode(s, sn, dbuf, dn)
 	end
 end
 
+function base64.decode(s, sn, dbuf, dn)
+	s = s:gsub('[^'..b64chars_s..'=]', '')
+	return (s:gsub('.', function(x)
+		if x == '=' then return '' end
+		local r, f = '', b64chars_s:find(x, 1, true)-1
+		for i=6,1,-1 do
+			r = r .. (f%2^i - f%2^(i-1) > 0 and '1' or '0')
+		end
+		return r
+	end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x)
+		if #x ~= 8 then return '' end
+		local c = 0
+		for i = 1,8 do
+			c = c + (x:sub(i, i) == '1' and 2^(8-i) or 0)
+		end
+		return string.char(c)
+	end))
+end
+
+-- https://tools.ietf.org/html/rfc8555 Page 10
+-- Binary fields in the JSON objects used by acme are encoded using
+-- base64url encoding described in Section 5 of [RFC4648] according to
+-- the profile specified in JSON Web Signature in Section 2 of
+-- [RFC7515].  This encoding uses a URL safe character set.  Trailing
+-- '=' characters MUST be stripped.  Encoded values that include
+-- trailing '=' characters MUST be rejected as improperly encoded.
+function base64.urlencode(s)
+	return b64.encode(s):gsub('/', '_'):gsub('+', '-'):gsub('=*$', '')
+end
+
+function base64.urldecode(s)
+	return b64.decode(s):gsub('_', '/'):gsub('-', '+'):gsub('=*$', '')
+end
+
+
 if not ... then
 	local clock = require'time'.clock
 	local b64 = require'libb64'
@@ -102,7 +138,7 @@ if not ... then
 		encoded1 = base64.encode(s)
 	end
 	local et = clock()
-	local dt =(et-st)
+	local dt = et - st
 	print('Lua len:',#s,'n:',n,dt,'sec', (#s*n)/dt/1024.0/1024.0, 'MB/s' )
 
 	local st = clock()
@@ -111,10 +147,15 @@ if not ... then
 		encoded2 = b64.encode(s)
 	end
 	local et = clock()
-	local dt =(et-st)
+	local dt = et - st
 	print('C   len:',#s,'n:',n,dt,'sec', (#s*n)/dt/1024.0/1024.0, 'MB/s' )
 
-	assert(encode1 == encode2)
+	encoded2 = encoded2:gsub('\n', '')
+	assert(encoded1 == encoded2)
+	assert(base64.decode(encoded1) == s)
+
+	--TODO: rewrite decode with ffi.
+	--TODO: benchmark decode.
 end
 
 
