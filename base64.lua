@@ -1,5 +1,5 @@
 
---Base64 encoding and decoding in Lua
+--Base64 encoding & decoding in Lua
 --Written by Cosmin Apreutesei. Public Domain.
 
 --Original code from:
@@ -88,7 +88,7 @@ function base64.encode(s, sn, dbuf, dn)
 	end
 
 	if dbuf then
-		return dp, dn
+		return dp, min_dn
 	else
 		return ffi.string(dp, dn)
 	end
@@ -114,19 +114,12 @@ function base64.decode(s, sn, dbuf, dn)
 	end))
 end
 
--- https://tools.ietf.org/html/rfc8555 Page 10
--- Binary fields in the JSON objects used by acme are encoded using
--- base64url encoding described in Section 5 of [RFC4648] according to
--- the profile specified in JSON Web Signature in Section 2 of
--- [RFC7515].  This encoding uses a URL safe character set.  Trailing
--- '=' characters MUST be stripped.  Encoded values that include
--- trailing '=' characters MUST be rejected as improperly encoded.
 function base64.urlencode(s)
-	return b64.encode(s):gsub('/', '_'):gsub('+', '-'):gsub('=*$', '')
+	return base64.encode(s):gsub('/', '_'):gsub('+', '-'):gsub('=*$', '')
 end
 
 function base64.urldecode(s)
-	return b64.decode(s):gsub('_', '/'):gsub('-', '+'):gsub('=*$', '')
+	return base64.decode(s):gsub('_', '/'):gsub('-', '+'):gsub('=*$', '')
 end
 
 return base64
